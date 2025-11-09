@@ -1,0 +1,40 @@
+{
+    "env": {
+        "stCompiler": "${env:STM32CLT_PATH}/GNU-tools-for-STM32/bin/arm-none-eabi-gcc",
+        "sdkIncludes": [
+            "${env:STM32CLT_PATH}/GNU-tools-for-STM32/arm-none-eabi/include"
+        ],
+        "genericDefines": [
+            "USE_HAL_DRIVER",
+            "USE_FULL_LL_DRIVER"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "stm32h5",
+            "includePath": [
+                "${sdkIncludes}",
+                "${workspaceFolder}/lib/cmsis-device-h5/Include",
+                "${workspaceFolder}/lib/stm32h5xx-hal-driver/Inc"
+            ],
+            "defines": [
+                "${genericDefines}",
+                "STM32H523xx"
+            ],
+            "customConfigurationVariables": {
+                "device": "STM32H523CETx",
+                "svd-file": "STM32H523",
+                "core": "1"
+            },
+            "compilerPath": "${stCompiler}",
+            "cStandard": "c11",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "${default}",
+            "compileCommands": [
+                "${workspaceFolder}/build/stm32h5/compile_commands.json"
+            ]
+
+        }
+    ],
+    "version": 4
+}
