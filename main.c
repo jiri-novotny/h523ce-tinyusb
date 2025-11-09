@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include CMSIS_device_header
+#include "tusb.h"
 
 #include "adc.h"
 #include "clk.h"

@@ -18,6 +18,7 @@ add_definitions(-DUSE_FULL_LL_DRIVER)
 include_directories(app)
 include_directories(drivers)
 include_directories(lib/cmsis-core/Include)
+include_directories(lib/tinyusb/src)
 
 add_subdirectory(app)
 add_subdirectory(lib)
@@ -28,6 +29,7 @@ if(stm32h5)
 
   add_definitions(-DCMSIS_device_header="stm32h5xx.h")
   add_definitions(-DSTM32H523xx)
+  add_definitions(-DCFG_TUSB_MCU=OPT_MCU_STM32H5)
 
   include_directories(drivers_h5)
   include_directories(lib/cmsis-device-h5/Include)
@@ -50,7 +52,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wall
     -Wextra
     -Werror
-    -pedantic
     -Wno-unused-parameter
     -fstack-usage -fcyclomatic-complexity
     --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb
