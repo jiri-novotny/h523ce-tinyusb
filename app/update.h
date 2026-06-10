@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+void jmp_btl(void);
 void schedule_reset(void);
 bool should_reset(void);
 

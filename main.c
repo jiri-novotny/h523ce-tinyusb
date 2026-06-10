@@ -1,16 +1,21 @@
 #include <stdint.h>
 
 #include CMSIS_device_header
-#include "tusb.h"
 
 #include "adc.h"
 #include "clk.h"
 #include "gpio.h"
+#include "usb.h"
 #include "watchdog.h"
 
+#include "tusb.h"
 #include "update.h"
 
 /* Private user code ---------------------------------------------------------*/
+
+void HardFault_Handler(void) {
+  __asm("BKPT #0\n");
+}
 
 /* Public user code ---------------------------------------------------------*/
 
@@ -26,19 +31,19 @@ int main(void)
   SystemClock_Config();
 
   /* Initialize all configured peripherals */
+  watchdog_init();
   gpio_init();
   adc_init();
-//  usb_start();
-  watchdog_init();
+  usb_init();
 
-#if 0
+#if 1
   uint32_t tick = 0;
   uint32_t tick10ms = HAL_GetTick();
   while (1)
   {
     /* run fast */
     tick = HAL_GetTick();
-    usb_receive();
+    tud_task(); // tinyusb device task
     if ((tick - tick10ms) < 10)
     {
       continue;

@@ -225,21 +225,8 @@ bool adc_complete(void)
   return ret;
 }
 
+extern void usb_send_temp(uint16_t temp);
 void adc_send(void)
 {
-#if 0
-  uint8_t pkt[8];
-  uint16_t ref;
-  uint16_t temp;
-
-  pkt[HDR] = HDR_TEMP;
-  pkt[LEN] = 6;
-  ref = __LL_ADC_CALC_VREFANALOG_VOLTAGE(adc_data[0], LL_ADC_RESOLUTION_12B);
-  temp = __LL_ADC_CALC_TEMPERATURE(TEMPSENSOR_CAL_VREFANALOG, adc_data[1], LL_ADC_RESOLUTION_12B);
-  memcpy(&pkt[DATA], &temp, 2);
-  memcpy(&pkt[DATA + 2], &ref, 2);
-  memcpy(&pkt[DATA + 4], &adc_data[1], 2);
-
-  usb_send(pkt, 8);
-#endif
+  usb_send_temp(__LL_ADC_CALC_TEMPERATURE(TEMPSENSOR_CAL_VREFANALOG, adc_data[1], LL_ADC_RESOLUTION_12B));
 }
