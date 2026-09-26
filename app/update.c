@@ -3,26 +3,27 @@
 #include CMSIS_device_header
 
 #include "update.h"
+#include "watchdog.h"
 
 static bool do_reset = false;
 
 /* Private typedef -----------------------------------------------------------*/
 typedef void (*pFunction)(void);
 
-/* Private define ------------------------------------------------------------*/
-#define BTL_BASE    0x0BF97000U
-
 /* Public functions ----------------------------------------------------------*/
 void jmp_btl(void)
 {
-  /* Jump to user application */
+  /* Jump to system bootloader */
   uint32_t JumpAddress = *(__IO uint32_t *) (BTL_BASE + 4);
-  pFunction JumpToApplication = (pFunction) JumpAddress;
+  pFunction JumpTo = (pFunction) JumpAddress;
 
+  WDI();
+  HAL_DeInit();
   __disable_irq();
-  /* Initialize user application's Stack Pointer */
+  /* Initialize Stack Pointer */
+  __set_MSPLIM(0);
   __set_MSP(*(__IO uint32_t *) BTL_BASE);
-  JumpToApplication();
+  JumpTo();
 }
 
 void schedule_reset(void)

@@ -10,19 +10,27 @@
 
 #include "tusb.h"
 #include "update.h"
+#include "usart.h"
+
+extern void usb_send_button(bool state);
+extern void usb_send_uart(void);
+extern void usb_send_modem(bool state);
 
 /* Private user code ---------------------------------------------------------*/
 
-void HardFault_Handler(void) {
+void HardFault_Handler(void)
+{
   __asm("BKPT #0\n");
 }
 
 /* Public user code ---------------------------------------------------------*/
+uint32_t modem_state = 0;
 
 int main(void)
 {
   uint32_t blink_timer = 0;
   uint32_t button_debounce = 0;
+  uint32_t button_state = 0;
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
@@ -34,9 +42,9 @@ int main(void)
   watchdog_init();
   gpio_init();
   adc_init();
+  u5_init();
   usb_init();
 
-#if 1
   uint32_t tick = 0;
   uint32_t tick10ms = HAL_GetTick();
   while (1)
@@ -49,11 +57,7 @@ int main(void)
       continue;
     }
     tick10ms = tick;
-#else
-  while (1)
-  {
-      HAL_Delay(10);
-#endif
+
     /* run every 10ms */
     blink_timer++;
     if (blink_timer == 1)
@@ -73,8 +77,9 @@ int main(void)
     if (button_debounce == 14)
     {
       button_debounce++;
-      // button action
-      led_run(true);
+      button_state = 1;
+      usb_send_button(true);
+
     }
     else if (button())
     {
@@ -83,11 +88,32 @@ int main(void)
     else
     {
       button_debounce = 0;
+      if (button_state == 1)
+      {
+        button_state = 0;
+        usb_send_button(false);
+      }
     }
 
     if (adc_complete())
     {
       adc_send();
+    }
+
+    if (modem_state == 0 && !modem())
+    {
+      usb_send_modem(modem_state);
+      modem_state = 2;
+    }
+    else if (modem_state == 1 && modem())
+    {
+      usb_send_modem(modem_state);
+      modem_state = 2;
+    }
+
+    if (u5_line_status())
+    {
+      usb_send_uart();
     }
 
     if (should_reset())

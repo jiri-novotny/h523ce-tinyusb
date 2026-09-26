@@ -12,6 +12,7 @@ void gpio_init(void);
 
 /* inputs */
 bool button(void);
+bool modem(void);
 
 /* outputs */
 void led_run(bool on);

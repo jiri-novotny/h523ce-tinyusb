@@ -11,6 +11,8 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_hal_rcc.c
    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_hal.c
    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_ll_adc.c
+   ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_ll_dma.c
+   ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_ll_exti.c
    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_ll_gpio.c
    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_ll_icache.c
    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/stm32h5xx-hal-driver/Src/stm32h5xx_ll_rcc.c
@@ -23,6 +25,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/adc.c
    ${CMAKE_CURRENT_SOURCE_DIR}/clk.c
    ${CMAKE_CURRENT_SOURCE_DIR}/gpio.c
+   ${CMAKE_CURRENT_SOURCE_DIR}/usart.c
    ${CMAKE_CURRENT_SOURCE_DIR}/usb.c
    ${CMAKE_CURRENT_SOURCE_DIR}/watchdog.c
 

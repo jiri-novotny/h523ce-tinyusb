@@ -17,7 +17,7 @@ add_definitions(-DUSE_FULL_LL_DRIVER)
 
 include_directories(app)
 include_directories(drivers)
-include_directories(lib/cmsis-core/Include)
+include_directories(lib/cmsis-core/CMSIS/Core/Include)
 include_directories(lib/tinyusb/src)
 
 add_subdirectory(app)
@@ -29,6 +29,9 @@ if(stm32h5)
 
   add_definitions(-DCMSIS_device_header="stm32h5xx.h")
   add_definitions(-DSTM32H523xx)
+  # for BTL_BASE check AN2606
+  add_definitions(-DBTL_BASE=0x0BF97000U)
+  # tinyusb
   add_definitions(-DCFG_TUSB_MCU=OPT_MCU_STM32H5)
 
   include_directories(drivers_h5)

@@ -179,6 +179,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 
 #include "adc.h"
 #include "update.h"
+#include "usart.h"
 
 /* packet struct */
 #define HDR  0
@@ -193,6 +194,12 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 #define PARAM_JUMP_BTL 2
 
 #define HDR_TEMP       2
+
+#define HDR_BTN        3
+
+#define HDR_UART       4
+
+#define HDR_MODEM      5
 
 // Invoked when received SET_REPORT control request or
 // received data on OUT endpoint ( Report ID = 0, Type = 0 )
@@ -235,6 +242,10 @@ void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t rep
         break;
       }
 
+      case HDR_UART:
+        u5_write(&pkt[DATA], pkt[LEN]);
+        break;
+
       default:
         break;
     }
@@ -255,4 +266,42 @@ void usb_send_temp(uint16_t temp)
   memcpy(&pkt[DATA], &temp, 2);
 
   tud_hid_report(0, pkt, 4);
+}
+
+void usb_send_button(bool state)
+{
+  uint8_t pkt[3];
+
+  pkt[HDR] = HDR_BTN;
+  pkt[LEN] = 1;
+  pkt[DATA] = (state) ? 1 : 0;
+
+  tud_hid_report(0, pkt, 3);
+}
+
+void usb_send_uart(void)
+{
+  uint8_t pkt[64];
+  int c;
+  uint8_t len = 0;
+
+  pkt[HDR] = HDR_UART;
+  while (((c = u5_read()) > 0) && (len < (sizeof(pkt) - 2)))
+  {
+    pkt[DATA + (len++)] = c;
+  }
+  pkt[LEN] = len;
+
+  tud_hid_report(0, pkt, 2 + len);
+}
+
+void usb_send_modem(bool state)
+{
+  uint8_t pkt[3];
+
+  pkt[HDR] = HDR_MODEM;
+  pkt[LEN] = 1;
+  pkt[DATA] = (state) ? 1 : 0;
+
+  tud_hid_report(0, pkt, 3);
 }
