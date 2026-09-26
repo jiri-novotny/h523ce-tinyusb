@@ -48,6 +48,57 @@
       background: #CCCCCC; /* Green background */
       cursor: pointer; /* Cursor on hover */
     }
+
+    .window {
+      position: absolute;
+      top: 100px;
+      left: 100px;
+      width: 1000px;
+      background-color: #f0f0f0;
+      border: 1px solid #707070;
+      border-radius: 6px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      user-select: none; /* Prevents text selection while dragging */
+      display: none;
+    }
+
+    .window-header {
+      background: linear-gradient(180deg, #e1e1e1, #cccccc);
+      padding: 4px 8px;
+      cursor: move;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #b0b0b0;
+    }
+
+    .window-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .close-btn {
+      background: #ff5f56;
+      border: 1px solid #e0443e;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      line-height: 14px;
+      text-align: center;
+      font-size: 14px;
+      padding-left: 3px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .window-body {
+      padding: 8px;
+      background-color: #ffffff;
+      color: #222;
+    }
   </style>
 </head>
 
@@ -56,35 +107,25 @@
   <br />
   <input type="button" id="btn-connect-device" value="connect" />
   <input type="button" id="btn-disconnect-device" value="disconnect" disabled />
-  <br />
-  count: <input type="number" id="in-led-cnt" value="1" min="1" max="24" alt="number of LEDs" disabled />
-  <input type="button" id="btn-led-off" value="Off" disabled />
-  <input type="button" id="btn-led-red" value="Red" disabled />
-  <input type="button" id="btn-led-green" value="Green" disabled />
-  <input type="button" id="btn-led-blue" value="Blue" disabled />
-  <br />
-  <br />
-  <div class="slidecontainer">
-    <input type="range" min="0" max="255" value="0" class="slider" style="background: #FF2200;"  id="slider-led-red">
-  </div>
-  <div class="slidecontainer">
-    <input type="range" min="0" max="255" value="0" class="slider" style="background: #04AA6D;" id="slider-led-green">
-  </div>
-  <div class="slidecontainer">
-    <input type="range" min="0" max="255" value="0" class="slider" style="background: #0022CC;" id="slider-led-blue">
-  </div>
-  <br />
+  <input type="button" id="btn-btl" value="JumpBtl" disabled />
   <br />
   <input type="button" id="btn-temperature" value="Temperature" disabled />
-  <br />
-  <input type="button" id="btn-btl" value="JumpBtl" disabled />
+  <input type="button" id="btn-terminal" value="Terminal" disabled />
   <br />
   <br />
   Response:
   <br />
   <div id="hid-resp">&nbsp;</div>
   <br />
-  <div id="terminal"></div>
+  <div id="desktop-window" class="window">
+    <div id="window-header" class="window-header">
+      <span class="window-title">Terminal</span>
+      <button id="close-btn" class="close-btn">&times;</button>
+    </div>
+    <div class="window-body">
+      <div id="terminal"></div>
+    </div>
+  </div>
 </body>
 <script>
   const HDR_NULL    = 0;
@@ -93,24 +134,14 @@
   const HDR_BTN     = 3;
   const HDR_UART    = 4;
   const HDR_MODEM   = 5;
-  const HDR_LEDS    = 6;
 
   let state = document.getElementById("hid-state");
   let response = document.getElementById("hid-resp");
   let connectButton = document.getElementById("btn-connect-device");
   let disconnectButton = document.getElementById("btn-disconnect-device");
 
-  let cntInput = document.getElementById("in-led-cnt");
-
-  let offButton = document.getElementById("btn-led-off");
-  let rdButton = document.getElementById("btn-led-red");
-  let grButton = document.getElementById("btn-led-green");
-  let blButton = document.getElementById("btn-led-blue");
-  var rdSlider = document.getElementById("slider-led-red");
-  var grSlider = document.getElementById("slider-led-green");
-  var blSlider = document.getElementById("slider-led-blue");
-
   let tempButton = document.getElementById("btn-temperature");
+  let termButton = document.getElementById("btn-terminal");
   let btlButton = document.getElementById("btn-btl");
 
   const term = new Terminal({convertEol:true});
@@ -187,53 +218,13 @@
     handleDisconnectedDevice(null);
   });
 
-  offButton.addEventListener("click", async () => {
-    let cnt = cntInput.valueAsNumber;
-    if (cnt > 24 || cnt < 1) cnt = 1;
-    sendPacket([HDR_LEDS, 4, cnt, 0x00, 0x00, 0x00]);
-  });
-
-  rdButton.addEventListener("click", async () => {
-    let cnt = cntInput.valueAsNumber;
-    if (cnt > 24 || cnt < 1) cnt = 1;
-    sendPacket([HDR_LEDS, 4, cnt, 0x40, 0x00, 0x00]);
-  });
-
-  grButton.addEventListener("click", async () => {
-    let cnt = cntInput.valueAsNumber;
-    if (cnt > 24 || cnt < 1) cnt = 1;
-    sendPacket([HDR_LEDS, 4, cnt, 0x00, 0x40, 0x00]);
-  });
-
-  blButton.addEventListener("click", async () => {
-    let cnt = cntInput.valueAsNumber;
-    if (cnt > 24 || cnt < 1) cnt = 1;
-    sendPacket([HDR_LEDS, 4, cnt, 0x00, 0x00, 0x40]);
-  });
-
-  rdSlider.oninput = clickColor;
-
-  grSlider.oninput = clickColor;
-
-  blSlider.oninput = clickColor;
-
-  function clickColor(hex, x, y) {
-    let pkt = new Uint8Array(6);
-    let cnt = cntInput.valueAsNumber;
-    if (cnt > 24 || cnt < 1) cnt = 1;
-
-    pkt[0] = HDR_LEDS;
-    pkt[1] = 4;
-    pkt[2] = cnt;
-    pkt[3] = rdSlider.valueAsNumber;
-    pkt[4] = grSlider.valueAsNumber;
-    pkt[5] = blSlider.valueAsNumber;
-
-    sendPacket(pkt);
-  }
-
   tempButton.addEventListener("click", async () => {
     sendPacket([HDR_TEMP, 0x00]);
+  });
+
+  termButton.addEventListener("click", async () => {
+    windowElement.style.display = "block";
+    termButton.disabled = true;
   });
 
   btlButton.addEventListener("click", async () => {
@@ -260,6 +251,7 @@
     grButton.disabled = state;
     blButton.disabled = state;
     tempButton.disabled = state;
+    termButton.disabled = state;
     btlButton.disabled = state;
   }
 
@@ -316,12 +308,7 @@
   navigator.hid.addEventListener("connect", handleConnectedDevice);
   navigator.hid.addEventListener("disconnect", handleDisconnectedDevice);
 
-  function resizeTerm() {
-    term.resize(Math.floor(document.documentElement.clientWidth / 9.3), Math.floor(document.documentElement.clientHeight / 33));
-  }
-
-  window.addEventListener('resize', resizeTerm);
-  resizeTerm();
+  term.resize(106, 36);
 
   term.onData(e => {
     if (connectButton.disabled)
@@ -336,6 +323,48 @@
   });
   term.open(document.getElementById('terminal'));
 
+  const windowElement = document.getElementById("desktop-window");
+  const headerElement = document.getElementById("window-header");
+  const closeBtn = document.getElementById("close-btn");
+
+  let isDragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  // Calculate offset when clicking header
+  headerElement.addEventListener("mousedown", (e) => {
+    isDragging = true;
+
+    // Distance from cursor to top-left corner of the window
+    offsetX = e.clientX - windowElement.offsetLeft;
+    offsetY = e.clientY - windowElement.offsetTop;
+
+    // Track movement across the entire document
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  });
+
+  function onMouseMove(e) {
+    if (!isDragging) return;
+
+    // Set new top-left coordinates relative to mouse position
+    windowElement.style.left = `${e.clientX - offsetX}px`;
+    windowElement.style.top = `${e.clientY - offsetY}px`;
+  }
+
+  function onMouseUp() {
+    isDragging = false;
+
+    // Clean up listeners when drag stops
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  }
+
+  // Close button functionality
+  closeBtn.addEventListener("click", () => {
+    windowElement.style.display = "none";
+    termButton.disabled = false;
+  });
 </script>
 
 </html>
