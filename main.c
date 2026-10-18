@@ -5,6 +5,7 @@
 #include "adc.h"
 #include "clk.h"
 #include "fs.h"
+#include "fs_cmd.h"
 #include "gpio.h"
 #include "usb.h"
 #include "watchdog.h"
@@ -33,6 +34,9 @@ int main(void)
   uint32_t button_debounce = 0;
   uint32_t button_state = 0;
 
+  /* jump to system bootloader if requested before reset */
+  btl_check();
+
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
@@ -54,6 +58,7 @@ int main(void)
     /* run fast */
     tick = HAL_GetTick();
     tud_task(); // tinyusb device task
+    fs_cmd_task();
     if ((tick - tick10ms) < 10)
     {
       continue;

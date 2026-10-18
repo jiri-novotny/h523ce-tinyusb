@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 void jmp_btl(void);
+void btl_check(void);
 void schedule_reset(void);
 bool should_reset(void);
 

@@ -13,6 +13,7 @@ extern uint32_t modem_state;
 void gpio_init(void)
 {
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+  LL_EXTI_InitTypeDef EXTI_InitStruct = {0};
 
   /* Outputs - Default value */
   LL_GPIO_ResetOutputPin(GPIOC, LL_GPIO_PIN_13);
@@ -25,13 +26,9 @@ void gpio_init(void)
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /**/
+  /* Inputs */
   LL_GPIO_SetPinPull(GPIOA, LL_GPIO_PIN_0, LL_GPIO_PULL_UP);
-
-  /**/
   LL_GPIO_SetPinMode(GPIOA, LL_GPIO_PIN_0, LL_GPIO_MODE_INPUT);
-
-  LL_EXTI_InitTypeDef EXTI_InitStruct = {0};
 
   LL_EXTI_SetEXTISource(LL_EXTI_EXTI_PORTB, LL_EXTI_EXTI_LINE14);
 

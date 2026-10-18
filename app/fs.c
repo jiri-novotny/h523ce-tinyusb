@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 
 #include CMSIS_device_header
@@ -16,6 +17,7 @@
 #define FS_BLOCK_CYCLES     500
 
 lfs_t fs_lfs;
+bool fs_mounted = false;
 
 static uint8_t fs_read_buffer[FS_CACHE_SIZE] __attribute__((aligned(4)));
 static uint8_t fs_prog_buffer[FS_CACHE_SIZE] __attribute__((aligned(4)));
@@ -98,5 +100,6 @@ int fs_init(void)
         err = lfs_mount(&fs_lfs, &fs_cfg);
     }
 
+    fs_mounted = (err == LFS_ERR_OK);
     return err;
 }

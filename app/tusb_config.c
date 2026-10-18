@@ -93,7 +93,7 @@ uint8_t const desc_configuration[] =
   TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 100),
 
   // Interface number, string index, protocol, report descriptor len, EP Out & In address, size & polling interval
-  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, 0x80 | EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 10)
+  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, 0x80 | EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 1)
 };
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -178,6 +178,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 //--------------------------------------------------------------------+
 
 #include "adc.h"
+#include "fs_cmd.h"
 #include "update.h"
 #include "usart.h"
 
@@ -200,6 +201,8 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 #define HDR_UART       4
 
 #define HDR_MODEM      5
+
+/* 6..11 - flash file access, see fs_cmd.h */
 
 // Invoked when received SET_REPORT control request or
 // received data on OUT endpoint ( Report ID = 0, Type = 0 )
@@ -244,6 +247,30 @@ void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t rep
 
       case HDR_UART:
         u5_write(&pkt[DATA], pkt[LEN]);
+        break;
+
+      case HDR_FS_OPEN:
+        fs_cmd_open(&pkt[DATA], pkt[LEN]);
+        break;
+
+      case HDR_FS_WRITE:
+        fs_cmd_write(&pkt[DATA], pkt[LEN]);
+        break;
+
+      case HDR_FS_READ:
+        fs_cmd_read();
+        break;
+
+      case HDR_FS_CLOSE:
+        fs_cmd_close();
+        break;
+
+      case HDR_FS_BENCH:
+        fs_cmd_bench(&pkt[DATA], pkt[LEN]);
+        break;
+
+      case HDR_FS_INFO:
+        fs_cmd_info();
         break;
 
       default:

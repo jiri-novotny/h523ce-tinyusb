@@ -113,6 +113,16 @@
   <input type="button" id="btn-terminal" value="Terminal" disabled />
   <br />
   <br />
+  Flash:
+  size <input type="number" id="fs-size" value="65536" min="1" step="1024" style="width: 8em" /> B,
+  chunk <input type="number" id="fs-chunk" value="256" min="1" max="4096" style="width: 5em" /> B
+  <br />
+  <input type="button" id="btn-fs-info" value="Info" disabled />
+  <input type="button" id="btn-fs-bench" value="Device bench" disabled />
+  <input type="button" id="btn-fs-write" value="USB write" disabled />
+  <input type="button" id="btn-fs-read" value="USB read" disabled />
+  <pre id="fs-log" style="max-height: 20em; overflow-y: auto;"></pre>
+  <br />
   Response:
   <br />
   <div id="hid-resp">&nbsp;</div>
@@ -134,6 +144,12 @@
   const HDR_BTN     = 3;
   const HDR_UART    = 4;
   const HDR_MODEM   = 5;
+  const HDR_FS_OPEN  = 6;
+  const HDR_FS_WRITE = 7;
+  const HDR_FS_READ  = 8;
+  const HDR_FS_CLOSE = 9;
+  const HDR_FS_BENCH = 10;
+  const HDR_FS_INFO  = 11;
 
   let state = document.getElementById("hid-state");
   let response = document.getElementById("hid-resp");
@@ -143,6 +159,14 @@
   let tempButton = document.getElementById("btn-temperature");
   let termButton = document.getElementById("btn-terminal");
   let btlButton = document.getElementById("btn-btl");
+
+  let fsSize = document.getElementById("fs-size");
+  let fsChunk = document.getElementById("fs-chunk");
+  let fsLog = document.getElementById("fs-log");
+  let fsInfoButton = document.getElementById("btn-fs-info");
+  let fsBenchButton = document.getElementById("btn-fs-bench");
+  let fsWriteButton = document.getElementById("btn-fs-write");
+  let fsReadButton = document.getElementById("btn-fs-read");
 
   const term = new Terminal({convertEol:true});
   let cmd = "";
@@ -245,11 +269,10 @@
   }
 
   function lockUi(state) {
-    cntInput.disabled = state;
-    offButton.disabled = state;
-    rdButton.disabled = state;
-    grButton.disabled = state;
-    blButton.disabled = state;
+    fsInfoButton.disabled = state;
+    fsBenchButton.disabled = state;
+    fsWriteButton.disabled = state;
+    fsReadButton.disabled = state;
     tempButton.disabled = state;
     termButton.disabled = state;
     btlButton.disabled = state;
@@ -278,6 +301,17 @@
         console.log(buf2hex(data.buffer.slice(0, pktLen + 2)));
         break;
 
+      case HDR_FS_READ:
+        if (fsReadSink) fsReadSink(new Uint8Array(data.buffer, 2, pktLen));
+        break;
+
+      case HDR_FS_OPEN:
+      case HDR_FS_CLOSE:
+      case HDR_FS_BENCH:
+      case HDR_FS_INFO:
+        if (fsWaiters[hdr]) fsWaiters[hdr](data);
+        break;
+
       case HDR_MODEM:
         response.innerText = ("Modem is " + ((data.getUint8(2) == 0) ? "off" : "on"));
         console.log(buf2hex(data.buffer.slice(0, pktLen + 2)));
@@ -288,6 +322,163 @@
         break;
     }
   }
+
+  /* ---------------- flash benchmark ---------------- */
+  const FS_FILE = "usb.bin";
+  const FS_PKT_DATA = 62;
+  let fsWaiters = {};
+  let fsReadSink = null;
+  let fsUsbData = null; // last data written over USB, used to verify read
+
+  function fsPrint(line) {
+    fsLog.textContent += line + "\n";
+    fsLog.scrollTop = fsLog.scrollHeight;
+  }
+
+  function fsRate(bytes, ms) {
+    return ms > 0 ? (bytes / 1024 / (ms / 1000)).toFixed(1) + " KiB/s" : "-";
+  }
+
+  function fsWaitReply(hdr, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        delete fsWaiters[hdr];
+        reject(new Error("timeout waiting for reply " + hdr));
+      }, timeoutMs);
+      fsWaiters[hdr] = (data) => {
+        clearTimeout(timer);
+        delete fsWaiters[hdr];
+        resolve(data);
+      };
+    });
+  }
+
+  async function fsRequest(pkt, hdr, timeoutMs) {
+    const reply = fsWaitReply(hdr, timeoutMs);
+    await sendPacket(pkt);
+    const data = await reply;
+    const status = data.getInt8(2);
+    if (status != 0) throw new Error("device error " + status);
+    return data;
+  }
+
+  async function fsOpen(name, write) {
+    const nameBytes = new TextEncoder().encode(name);
+    const pkt = new Uint8Array(3 + nameBytes.length);
+    pkt[0] = HDR_FS_OPEN;
+    pkt[1] = 1 + nameBytes.length;
+    pkt[2] = write ? 1 : 0;
+    pkt.set(nameBytes, 3);
+    const data = await fsRequest(pkt, HDR_FS_OPEN, 5000);
+    return data.getUint32(3, true);
+  }
+
+  async function fsClose(timeoutMs) {
+    const data = await fsRequest([HDR_FS_CLOSE, 0], HDR_FS_CLOSE, timeoutMs);
+    return data.getUint32(3, true);
+  }
+
+  async function fsRun(fn) {
+    lockUi(true);
+    try {
+      await fn();
+    } catch (error) {
+      fsPrint("  FAILED: " + error.message);
+    }
+    lockUi(!connectButton.disabled);
+  }
+
+  fsInfoButton.addEventListener("click", () => fsRun(async () => {
+    const data = await fsRequest([HDR_FS_INFO, 0], HDR_FS_INFO, 5000);
+    const jedec = data.getUint32(3, true);
+    const blockSize = data.getUint32(7, true);
+    const blockCount = data.getUint32(11, true);
+    const used = data.getUint32(15, true);
+    fsPrint("Info: JEDEC " + jedec.toString(16).padStart(6, "0") +
+            ", " + (blockSize * blockCount / 1024 / 1024) + " MiB" +
+            ", block " + blockSize + " B" +
+            ", used " + used + "/" + blockCount + " blocks");
+  }));
+
+  fsBenchButton.addEventListener("click", () => fsRun(async () => {
+    const size = parseInt(fsSize.value);
+    const chunk = parseInt(fsChunk.value);
+    fsPrint("Device bench: " + size + " B, chunk " + chunk + " B ...");
+    const pkt = new Uint8Array(8);
+    const view = new DataView(pkt.buffer);
+    pkt[0] = HDR_FS_BENCH;
+    pkt[1] = 6;
+    view.setUint32(2, size, true);
+    view.setUint16(6, chunk, true);
+    // flash write is roughly tens of KiB/s, be generous
+    const data = await fsRequest(pkt, HDR_FS_BENCH, 30000 + size / 5);
+    const writeMs = data.getUint32(3, true);
+    const readMs = data.getUint32(7, true);
+    const errors = data.getUint32(11, true);
+    fsPrint("  write " + writeMs + " ms (" + fsRate(size, writeMs) + ")" +
+            ", read " + readMs + " ms (" + fsRate(size, readMs) + ")" +
+            ", verify " + (errors == 0 ? "OK" : errors + " bad bytes"));
+  }));
+
+  fsWriteButton.addEventListener("click", () => fsRun(async () => {
+    const size = parseInt(fsSize.value);
+    fsUsbData = new Uint8Array(size);
+    for (let off = 0; off < size; off += 65536) {
+      crypto.getRandomValues(fsUsbData.subarray(off, Math.min(off + 65536, size)));
+    }
+    fsPrint("USB write: " + size + " B to " + FS_FILE + " ...");
+
+    const t0 = performance.now();
+    await fsOpen(FS_FILE, true);
+    const pkt = new Uint8Array(2 + FS_PKT_DATA);
+    pkt[0] = HDR_FS_WRITE;
+    for (let off = 0; off < size; off += FS_PKT_DATA) {
+      const n = Math.min(FS_PKT_DATA, size - off);
+      pkt[1] = n;
+      pkt.set(fsUsbData.subarray(off, off + n), 2);
+      await sendPacket(pkt.subarray(0, 2 + n));
+    }
+    const bytes = await fsClose(10000);
+    const ms = performance.now() - t0;
+    fsPrint("  " + bytes + " B in " + ms.toFixed(0) + " ms (" + fsRate(bytes, ms) + ")" +
+            (bytes != size ? " - SIZE MISMATCH" : ""));
+  }));
+
+  fsReadButton.addEventListener("click", () => fsRun(async () => {
+    fsPrint("USB read: " + FS_FILE + " ...");
+    const t0 = performance.now();
+    const size = await fsOpen(FS_FILE, false);
+    const buf = new Uint8Array(size);
+    let got = 0;
+    const done = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("read timeout at " + got + " B")), 10000 + size / 2);
+      fsReadSink = (chunk) => {
+        if (chunk.length == 0 || got + chunk.length > size) {
+          clearTimeout(timer);
+          resolve();
+          return;
+        }
+        buf.set(chunk, got);
+        got += chunk.length;
+      };
+    });
+    try {
+      await sendPacket([HDR_FS_READ, 0]);
+      await done;
+    } finally {
+      fsReadSink = null;
+    }
+    const bytes = await fsClose(5000);
+    const ms = performance.now() - t0;
+
+    let verify = "not verified (no USB write in this session)";
+    if (fsUsbData && fsUsbData.length == size) {
+      let bad = 0;
+      for (let i = 0; i < size; i++) if (buf[i] != fsUsbData[i]) bad++;
+      verify = bad == 0 ? "verify OK" : "verify " + bad + " bad bytes";
+    }
+    fsPrint("  " + bytes + "/" + size + " B in " + ms.toFixed(0) + " ms (" + fsRate(bytes, ms) + "), " + verify);
+  }));
 
   function hexToAscii(str) {
     let hex = str.toString();

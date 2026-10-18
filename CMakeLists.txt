@@ -27,7 +27,7 @@ add_subdirectory(app)
 add_subdirectory(lib)
 
 if(stm32h5)
-  set(linker_script_SRC ${CMAKE_CURRENT_SOURCE_DIR}/lib/cmsis-device-h5/Source/Templates/gcc/linker/STM32H523xx_FLASH.ld)
+  set(linker_script_SRC ${CMAKE_CURRENT_SOURCE_DIR}/drivers_h5/STM32H523xx_FLASH.ld)
   set(CPU_CORE cortex-m33)
 
   add_definitions(-DCMSIS_device_header="stm32h5xx.h")
