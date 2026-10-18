@@ -1,6 +1,9 @@
 set(SOURCE
    ${SOURCE}
 
+   ${CMAKE_CURRENT_SOURCE_DIR}/littlefs/lfs.c
+   ${CMAKE_CURRENT_SOURCE_DIR}/littlefs/lfs_util.c
+
    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb/src/class/hid/hid_device.c
    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb/src/common/tusb_fifo.c
    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb/src/device/usbd.c

@@ -14,10 +14,13 @@ message("-- Build type: " ${CMAKE_BUILD_TYPE})
 # Project-specific
 add_definitions(-DUSE_HAL_DRIVER)
 add_definitions(-DUSE_FULL_LL_DRIVER)
+# littlefs
+add_definitions(-DLFS_NO_DEBUG)
 
 include_directories(app)
 include_directories(drivers)
 include_directories(lib/cmsis-core/CMSIS/Core/Include)
+include_directories(lib/littlefs)
 include_directories(lib/tinyusb/src)
 
 add_subdirectory(app)
@@ -59,6 +62,9 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -fstack-usage -fcyclomatic-complexity
     --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb
 )
+
+# littlefs: lfs_mlist_isopen() is used only in asserts, unused with NDEBUG
+set_source_files_properties(lib/littlefs/lfs.c PROPERTIES COMPILE_OPTIONS -Wno-unused-function)
 
 # Linker options
 target_link_options(${PROJECT_NAME} PRIVATE

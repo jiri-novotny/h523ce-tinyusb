@@ -16,6 +16,7 @@ bool modem(void);
 
 /* outputs */
 void led_run(bool on);
+void led_toggle(void);
 
 #ifdef __cplusplus
 }

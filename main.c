@@ -4,6 +4,7 @@
 
 #include "adc.h"
 #include "clk.h"
+#include "fs.h"
 #include "gpio.h"
 #include "usb.h"
 #include "watchdog.h"
@@ -44,6 +45,7 @@ int main(void)
   adc_init();
   u5_init();
   usb_init();
+  fs_init();
 
   uint32_t tick = 0;
   uint32_t tick10ms = HAL_GetTick();

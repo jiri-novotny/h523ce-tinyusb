@@ -97,3 +97,8 @@ void led_run(bool on)
     LL_GPIO_SetOutputPin(GPIOC, LL_GPIO_PIN_13);
   }
 }
+
+void led_toggle(void)
+{
+  LL_GPIO_TogglePin(GPIOC, LL_GPIO_PIN_13);
+}
