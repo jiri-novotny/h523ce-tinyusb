@@ -21,6 +21,8 @@ include_directories(app)
 include_directories(drivers)
 include_directories(lib/cmsis-core/CMSIS/Core/Include)
 include_directories(lib/littlefs)
+include_directories(lib/monocypher/src)
+include_directories(lib/monocypher/src/optional)
 include_directories(lib/tinyusb/src)
 
 add_subdirectory(app)

@@ -1,9 +1,11 @@
 set(SOURCE
    ${SOURCE}
 
+   ${CMAKE_CURRENT_SOURCE_DIR}/crypto_test.c
    ${CMAKE_CURRENT_SOURCE_DIR}/fs.c
    ${CMAKE_CURRENT_SOURCE_DIR}/fs_cmd.c
    ${CMAKE_CURRENT_SOURCE_DIR}/tusb_config.c
+   ${CMAKE_CURRENT_SOURCE_DIR}/udp_crypto.c
    ${CMAKE_CURRENT_SOURCE_DIR}/update.c
 
    PARENT_SCOPE

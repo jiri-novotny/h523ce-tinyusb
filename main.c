@@ -4,9 +4,11 @@
 
 #include "adc.h"
 #include "clk.h"
+#include "crypto_test.h"
 #include "fs.h"
 #include "fs_cmd.h"
 #include "gpio.h"
+#include "rng.h"
 #include "usb.h"
 #include "watchdog.h"
 
@@ -48,6 +50,7 @@ int main(void)
   gpio_init();
   adc_init();
   u5_init();
+  rng_init();
   usb_init();
   fs_init();
 
@@ -59,6 +62,7 @@ int main(void)
     tick = HAL_GetTick();
     tud_task(); // tinyusb device task
     fs_cmd_task();
+    crypto_test_task();
     if ((tick - tick10ms) < 10)
     {
       continue;

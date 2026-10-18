@@ -178,6 +178,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 //--------------------------------------------------------------------+
 
 #include "adc.h"
+#include "crypto_test.h"
 #include "fs_cmd.h"
 #include "update.h"
 #include "usart.h"
@@ -203,6 +204,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 #define HDR_MODEM      5
 
 /* 6..11 - flash file access, see fs_cmd.h */
+/* 12 - crypto self test, see crypto_test.h */
 
 // Invoked when received SET_REPORT control request or
 // received data on OUT endpoint ( Report ID = 0, Type = 0 )
@@ -271,6 +273,10 @@ void tud_hid_set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t rep
 
       case HDR_FS_INFO:
         fs_cmd_info();
+        break;
+
+      case HDR_CRYPTO_TEST:
+        crypto_test_request();
         break;
 
       default:

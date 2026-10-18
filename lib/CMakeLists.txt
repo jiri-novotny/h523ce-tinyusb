@@ -4,6 +4,9 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/littlefs/lfs.c
    ${CMAKE_CURRENT_SOURCE_DIR}/littlefs/lfs_util.c
 
+   ${CMAKE_CURRENT_SOURCE_DIR}/monocypher/src/monocypher.c
+   ${CMAKE_CURRENT_SOURCE_DIR}/monocypher/src/optional/monocypher-ed25519.c
+
    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb/src/class/hid/hid_device.c
    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb/src/common/tusb_fifo.c
    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb/src/device/usbd.c
